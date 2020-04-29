@@ -8,11 +8,16 @@
 #include <arpa/inet.h> /* pour htons et inet_aton */
 #include <unistd.h> /* pour sleep */
 #include <poll.h>
-#include "server.h"
+//#include "server.h"
 
 #define PORT IPPORT_USERRESERVED // = 5000
-
+#define MAX_USERS 5
 #define LG_MESSAGE   256
+
+typedef struct user {
+  int socketClient;
+  char login[50];
+}user;
 
 int main()
 {

@@ -8,7 +8,6 @@
 #include <arpa/inet.h> /* pour htons et inet_aton */
 #include <unistd.h> /* pour sleep */
 #include <poll.h>
-//#include "server.h"
 
 #define PORT IPPORT_USERRESERVED // = 5000
 #define MAX_USERS 5
@@ -83,11 +82,15 @@ int main()
     // Liste des sockets à écouter
     // socketEcoute + users[].socket => pollfds[]
     pollfds[nfds].fd = socketEcoute;
+    pollfds[nfds].events = POLLIN;
+    pollfds[nfds].revents = 0;
     nfds++;
 
     for(int i = 0; i < MAX_USERS; i++) {
-      if(users[i].socketClient < 0) {
+      if(users[i].socketClient > 0) {
         pollfds[nfds].fd = users[i].socketClient;
+        pollfds[nfds].events = POLLIN;
+        pollfds[nfds].revents = 0;
         nfds++;
       }
     }
@@ -96,10 +99,17 @@ int main()
     if (nevents > 0) {
       // parcours de pollfds[] à la recherche des revents != 0
       for(int u = 0; u < nfds; u++) {
-        pollfds[u].revents;
+        if(pollfds[u].revents != 0) {
+          if(u == 0) {
+            //accept
+          }
+          else {
+            //read
+          }
+        }
       }
       // si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
-      
+
       // sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
     } else {
       printf("poll() returned %d\n", nevents);

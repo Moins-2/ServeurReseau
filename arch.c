@@ -94,13 +94,14 @@ int main()
         nfds++;
       }
     }
-
+    printf("avant le nevent\n");
     nevents = poll(pollfds, nfds, -1);
     if (nevents > 0) {
       // parcours de pollfds[] à la recherche des revents != 0
       for(int u = 0; u < nfds; u++) {
         if(pollfds[u].revents != 0) {
           if(u == 0) {
+            printf("u = 0\n");
             for(int i = 0; i < MAX_USERS; i++) {
               if(users[i].socketClient < 0) {
                 users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
@@ -114,6 +115,7 @@ int main()
             }
           }
           else {
+            printf("else\n");
             for(int i = 0; i < MAX_USERS; i++) {
               if(pollfds[u].fd == users[i].socketClient) {
                 lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
@@ -133,6 +135,7 @@ int main()
               }
             }
           }
+          pollfds[u].revents = 0;
         }
       }
       // si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]

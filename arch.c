@@ -76,7 +76,7 @@ int main()
   // boucle d'attente de connexion : en théorie, un serveur attend indéfiniment !
   while(1)
   {
-    int nevents, i, j;
+    int nevents;
     int nfds = 0, qui = -1;
 
     // Liste des sockets à écouter
@@ -101,10 +101,37 @@ int main()
       for(int u = 0; u < nfds; u++) {
         if(pollfds[u].revents != 0) {
           if(u == 0) {
-            //accept
+            for(int i = 0; i < MAX_USERS; i++) {
+              if(users[i].socketClient < 0) {
+                users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
+                if (socketDialogue < 0) {
+                  perror("accept");
+                  close(users[i].socketClient);
+                  close(socketEcoute);
+                  exit(-4);
+                }
+              }
+            }
           }
           else {
-            //read
+            for(int i = 0; i < MAX_USERS; i++) {
+              if(pollfds[u].fd == users[i].socketClient) {
+                lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
+
+                switch(lus) {
+                  case -1 :
+                    perror("read");
+                    close(users[i].socketClient);
+                    exit(-5);
+                  case 0 :
+                    fprintf(stderr, "La socket a été fermée par le client !\n\n");
+                    close(users[i].socketClient);
+                    return 0;
+                  default:
+                    printf("Message reçu : %s (%d octets)\n\n", messageRecu, lus);
+                }
+              }
+            }
           }
         }
       }

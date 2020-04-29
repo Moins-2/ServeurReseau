@@ -32,7 +32,6 @@ int main()
   user users[MAX_USERS];
   struct pollfd pollfds[MAX_USERS + 1];
 
-
   memset(users, '\0', MAX_USERS*sizeof(user));
 
   // Crée un socket de communication
@@ -103,14 +102,17 @@ int main()
           if(u == 0) {
             printf("u = 0\n");
             for(int i = 0; i < MAX_USERS; i++) {
-              if(users[i].socketClient < 0) {
+              printf("valeur = %d %d\n", i, users[i].socketClient);
+              if(users[i].socketClient == 0) {
+                printf("i = %d\n", i);
                 users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
-                if (socketDialogue < 0) {
+                if (users[i].socketClient < 0) {
                   perror("accept");
                   close(users[i].socketClient);
                   close(socketEcoute);
                   exit(-4);
                 }
+                break;
               }
             }
           }
@@ -128,6 +130,7 @@ int main()
                   case 0 :
                     fprintf(stderr, "La socket a été fermée par le client !\n\n");
                     close(users[i].socketClient);
+                    users[i].socketClient = 0;
                     return 0;
                   default:
                     printf("Message reçu : %s (%d octets)\n\n", messageRecu, lus);

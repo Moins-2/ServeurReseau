@@ -14,7 +14,7 @@
 #define MAX_USERS 5
 #define LG_MESSAGE   256
 
-typedef struct user {
+typedef struct User {
   int socketClient;
   char login[50];
 }user;
@@ -30,10 +30,11 @@ int main()
   char messageRecu[LG_MESSAGE]; /* le message de la couche Application ! */
   int ecrits, lus; /* nb d'octets ecrits et lus */
   int retour;
-  struct user users[MAX_USERS];
+  user users[MAX_USERS];
   struct pollfd pollfds[MAX_USERS + 1];
 
-  memset(users, '\0', MAX_USERS*sizeof(struct user));
+
+  memset(users, '\0', MAX_USERS*sizeof(user));
 
   // Crée un socket de communication
   socketEcoute = socket(PF_INET, SOCK_STREAM, 0); /* 0 indique que l'on utilisera le protocole par défaut associé à SOCK_STREAM soit TCP */
@@ -77,17 +78,28 @@ int main()
   while(1)
   {
     int nevents, i, j;
-    int nfds = 0;
+    int nfds = 0, qui = -1;
 
     // Liste des sockets à écouter
     // socketEcoute + users[].socket => pollfds[]
+    pollfds[nfds].fd = socketEcoute;
+    nfds++;
+
+    for(int i = 0; i < MAX_USERS; i++) {
+      if(users[i].socketClient < 0) {
+        pollfds[nfds].fd = users[i].socketClient;
+        nfds++;
+      }
+    }
 
     nevents = poll(pollfds, nfds, -1);
     if (nevents > 0) {
       // parcours de pollfds[] à la recherche des revents != 0
-      //
+      for(int u = 0; u < nfds; u++) {
+        pollfds[u].revents;
+      }
       // si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
-      //
+      
       // sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
     } else {
       printf("poll() returned %d\n", nevents);

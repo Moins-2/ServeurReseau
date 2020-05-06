@@ -13,11 +13,11 @@
 #define PORT IPPORT_USERRESERVED // = 5000
 #define MAX_USERS 5
 #define LG_MESSAGE   256
-#define LENGHT_LOGIN 10
+#define LENGHT_LOGIN 50
 
 typedef struct User {
   int socketClient;
-  char login[50];
+  char login[LENGHT_LOGIN];
 }user;
 
 int main()
@@ -80,10 +80,11 @@ int main()
     int nevents;
     int nfds = 0, qui = -1;
     char login_tampon[LENGHT_LOGIN];
+    int login_test=1;
 
-    for(int i =0; i<LENGHT_LOGIN; i++){
+  /*  for(int i =0; i<LENGHT_LOGIN; i++){
       login_tampon[i]="";
-    }
+    }*/
     // Liste des sockets à écouter
     // socketEcoute + users[].socket => pollfds[]
     pollfds[nfds].fd = socketEcoute;
@@ -125,8 +126,25 @@ int main()
                   login par default
                 */
 
-                for(int i=1; i <= MAX_USERS; i++){
-                  
+                for(int k=1; k <= MAX_USERS; k++){
+                  sprintf(login_tampon, "Anonyme_%d", k);
+                  for(int j=0; j < MAX_USERS; j++){
+                    printf("login_tampon = %s\n", login_tampon);
+                    printf("users[%d].login = %s\n", j,users[j].login);
+                    if(strcmp(login_tampon,users[j].login) == 0 ){
+                      printf("login_test++ et j =%d\n",j );
+                      login_test++;
+                      break;
+                    }
+
+                  }
+                  printf("login_test = %d\n",login_test );
+                  if(login_test==1){
+                    printf("login = %s\n", login_tampon);
+                    strcpy(users[i].login,login_tampon);
+                    break;
+                  }
+                  login_test=1;
                 }
 
                 break;
@@ -138,6 +156,15 @@ int main()
             for(int i = 0; i < MAX_USERS; i++) {
               if(pollfds[u].fd == users[i].socketClient) {
                 lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
+
+                int j;
+                j = strcspn(messageRecu,"!");
+                if (j==lus) {
+                  printf ("Le message n'a pas de ! \n");
+                }
+                printf ("Le point d'exclamation est en %d ème position\n",j+1);
+                j=0;
+
 
                 switch(lus) {
                   case -1 :
@@ -151,7 +178,7 @@ int main()
                     users[i].socketClient = 0;
                     break;
                   default:
-                    printf("Message reçu : %s (%d octets)\n\n", messageRecu, lus);
+                    printf("Message envoyé par %s : %s (%d octets)\n\n",users[i].login, messageRecu, lus);
                 }
               }
             }
@@ -172,3 +199,4 @@ int main()
 
   return 0;
 }
+

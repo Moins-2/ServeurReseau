@@ -1,3 +1,4 @@
+
 #include <stdio.h>
 #include <stdlib.h> /* pour exit */
 #include <unistd.h> /* pour close */
@@ -12,6 +13,7 @@
 #define PORT IPPORT_USERRESERVED // = 5000
 #define MAX_USERS 5
 #define LG_MESSAGE   256
+#define LENGHT_LOGIN 10
 
 typedef struct User {
   int socketClient;
@@ -77,7 +79,11 @@ int main()
   {
     int nevents;
     int nfds = 0, qui = -1;
+    char login_tampon[LENGHT_LOGIN];
 
+    for(int i =0; i<LENGHT_LOGIN; i++){
+      login_tampon[i]="";
+    }
     // Liste des sockets à écouter
     // socketEcoute + users[].socket => pollfds[]
     pollfds[nfds].fd = socketEcoute;
@@ -100,11 +106,8 @@ int main()
       for(int u = 0; u < nfds; u++) {
         if(pollfds[u].revents != 0) {
           if(u == 0) {
-            printf("u = 0\n");
             for(int i = 0; i < MAX_USERS; i++) {
-              printf("valeur = %d %d\n", i, users[i].socketClient);
               if(users[i].socketClient == 0) {
-                printf("i = %d\n", i);
                 users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
                 if (users[i].socketClient < 0) {
                   perror("accept");
@@ -112,6 +115,20 @@ int main()
                   close(socketEcoute);
                   exit(-4);
                 }
+
+
+                /*fonction bienvue
+                      verion et !hello
+                */
+
+                /*
+                  login par default
+                */
+
+                for(int i=1; i <= MAX_USERS; i++){
+                  
+                }
+
                 break;
               }
             }
@@ -127,11 +144,12 @@ int main()
                     perror("read");
                     close(users[i].socketClient);
                     exit(-5);
+
                   case 0 :
                     fprintf(stderr, "La socket a été fermée par le client !\n\n");
                     close(users[i].socketClient);
                     users[i].socketClient = 0;
-                    return 0;
+                    break;
                   default:
                     printf("Message reçu : %s (%d octets)\n\n", messageRecu, lus);
                 }

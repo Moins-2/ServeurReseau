@@ -211,11 +211,11 @@ void initName(user users[MAX_USERS], int i){
 
 void detectCommande(char messageRecu[LG_MESSAGE]){
 
-    int j;
-    j = strcspn(messageRecu,"!");
-    int mode = 0;
-    //test nom commande
-    if(j==0){
+  int j;
+  j = strcspn(messageRecu,"!");
+  int mode = 0;
+  //test nom commande
+  if(j==0){
     char *rest = NULL;
     char *mot;
     int cpt=0;
@@ -226,7 +226,10 @@ void detectCommande(char messageRecu[LG_MESSAGE]){
     for (mot = strtok_r(messageCopy, " ", &rest);
     mot != NULL;
     mot = strtok_r(NULL, " ", &rest)) {
-      if(cpt==0){
+
+
+      switch(cpt){
+        case 0:
         printf("commande : %s\n", mot);
 
         if(strcmp(mot, "!message") == 0){
@@ -235,21 +238,29 @@ void detectCommande(char messageRecu[LG_MESSAGE]){
         else {
           printf("Commande non reconnue\n");
         }
+        break;
 
-      }
-      else if(cpt==1){
-        if(mode==1){
+        case 1:
+        switch (mode) {
+          case 1:
           printf("destinataire : %s\n", mot);
+          break;
         }
-      }
-      else if(cpt==2){
-        if(mode==1){
+        break;
+
+        case 2:
+        switch (mode) {
+          case 1:
           strcat(contenu, mot);
+          break;
         }
-      }
-      else {
-        if(mode==1){
+        break;
+
+        default:
+        switch (mode) {
+          case 1:
           strcat(strcat(contenu, " "), mot);
+          break;
         }
       }
 
@@ -267,5 +278,3 @@ void detectCommande(char messageRecu[LG_MESSAGE]){
 
   j=-2;
 }
-
-

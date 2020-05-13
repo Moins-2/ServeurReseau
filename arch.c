@@ -1,4 +1,3 @@
-
 #include <stdio.h>
 #include <stdlib.h> /* pour exit */
 #include <unistd.h> /* pour close */
@@ -19,6 +18,10 @@ typedef struct User {
   int socketClient;
   char login[LENGHT_LOGIN];
 }user;
+
+void initName(user users[MAX_USERS], int i);
+void detectCommande(char messageRecu[LG_MESSAGE]);
+
 
 int main()
 {
@@ -79,124 +82,190 @@ int main()
   {
     int nevents;
     int nfds = 0, qui = -1;
-    char login_tampon[LENGHT_LOGIN];
-    int login_test=1;
 
-  /*  for(int i =0; i<LENGHT_LOGIN; i++){
-      login_tampon[i]="";
-    }*/
-    // Liste des sockets à écouter
-    // socketEcoute + users[].socket => pollfds[]
-    pollfds[nfds].fd = socketEcoute;
-    pollfds[nfds].events = POLLIN;
-    pollfds[nfds].revents = 0;
-    nfds++;
+    /*  for(int i =0; i<LENGHT_LOGIN; i++){
+    login_tampon[i]="";
+  }*/
+  // Liste des sockets à écouter
+  // socketEcoute + users[].socket => pollfds[]
+  pollfds[nfds].fd = socketEcoute;
+  pollfds[nfds].events = POLLIN;
+  pollfds[nfds].revents = 0;
+  nfds++;
 
-    for(int i = 0; i < MAX_USERS; i++) {
-      if(users[i].socketClient > 0) {
-        pollfds[nfds].fd = users[i].socketClient;
-        pollfds[nfds].events = POLLIN;
-        pollfds[nfds].revents = 0;
-        nfds++;
-      }
-    }
-    printf("avant le nevent\n");
-    nevents = poll(pollfds, nfds, -1);
-    if (nevents > 0) {
-      // parcours de pollfds[] à la recherche des revents != 0
-      for(int u = 0; u < nfds; u++) {
-        if(pollfds[u].revents != 0) {
-          if(u == 0) {
-            for(int i = 0; i < MAX_USERS; i++) {
-              if(users[i].socketClient == 0) {
-                users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
-                if (users[i].socketClient < 0) {
-                  perror("accept");
-                  close(users[i].socketClient);
-                  close(socketEcoute);
-                  exit(-4);
-                }
-
-
-                /*fonction bienvue
-                      verion et !hello
-                */
-
-                /*
-                  login par default
-                */
-
-                for(int k=1; k <= MAX_USERS; k++){
-                  sprintf(login_tampon, "Anonyme_%d", k);
-                  for(int j=0; j < MAX_USERS; j++){
-                    printf("login_tampon = %s\n", login_tampon);
-                    printf("users[%d].login = %s\n", j,users[j].login);
-                    if(strcmp(login_tampon,users[j].login) == 0 ){
-                      printf("login_test++ et j =%d\n",j );
-                      login_test++;
-                      break;
-                    }
-
-                  }
-                  printf("login_test = %d\n",login_test );
-                  if(login_test==1){
-                    printf("login = %s\n", login_tampon);
-                    strcpy(users[i].login,login_tampon);
-                    break;
-                  }
-                  login_test=1;
-                }
-
-                break;
-              }
-            }
-          }
-          else {
-            printf("else\n");
-            for(int i = 0; i < MAX_USERS; i++) {
-              if(pollfds[u].fd == users[i].socketClient) {
-                lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
-
-                int j;
-                j = strcspn(messageRecu,"!");
-                if (j==lus) {
-                  printf ("Le message n'a pas de ! \n");
-                }
-                printf ("Le point d'exclamation est en %d ème position\n",j+1);
-                j=0;
-
-
-                switch(lus) {
-                  case -1 :
-                    perror("read");
-                    close(users[i].socketClient);
-                    exit(-5);
-
-                  case 0 :
-                    fprintf(stderr, "La socket a été fermée par le client !\n\n");
-                    close(users[i].socketClient);
-                    users[i].socketClient = 0;
-                    break;
-                  default:
-                    printf("Message envoyé par %s : %s (%d octets)\n\n",users[i].login, messageRecu, lus);
-                }
-              }
-            }
-          }
-          pollfds[u].revents = 0;
-        }
-      }
-      // si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
-
-      // sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
-    } else {
-      printf("poll() returned %d\n", nevents);
+  for(int i = 0; i < MAX_USERS; i++) {
+    if(users[i].socketClient > 0) {
+      pollfds[nfds].fd = users[i].socketClient;
+      pollfds[nfds].events = POLLIN;
+      pollfds[nfds].revents = 0;
+      nfds++;
     }
   }
+  printf("avant le nevent\n");
+  nevents = poll(pollfds, nfds, -1);
+  if (nevents > 0) {
+    // parcours de pollfds[] à la recherche des revents != 0
+    for(int u = 0; u < nfds; u++) {
+      if(pollfds[u].revents != 0) {
+        if(u == 0) {
+          for(int i = 0; i < MAX_USERS; i++) {
+            if(users[i].socketClient == 0) {
+              users[i].socketClient = accept(socketEcoute, (struct sockaddr *)&pointDeRencontreDistant, & longueurAdresse);
+              if (users[i].socketClient < 0) {
+                perror("accept");
+                close(users[i].socketClient);
+                close(socketEcoute);
+                exit(-4);
+              }
 
-  // On ferme la ressource avant de quitter
-  close(socketEcoute);
 
-  return 0;
+              /*fonction bienvue
+              verion et !hello
+              */
+
+              /*
+              login par default
+              */
+              initName(users, i);
+
+
+
+
+              break;
+            }
+          }
+        }
+        else {
+          printf("else\n");
+          for(int i = 0; i < MAX_USERS; i++) {
+            if(pollfds[u].fd == users[i].socketClient) {
+              lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
+
+              //fct detectCommande
+
+              detectCommande( messageRecu);
+
+              //Fin de la foncion
+
+
+
+
+              switch(lus) {
+                case -1 :
+                perror("read");
+                close(users[i].socketClient);
+                exit(-5);
+
+                case 0 :
+                fprintf(stderr, "La socket a été fermée par le client !\n\n");
+                close(users[i].socketClient);
+                users[i].socketClient = 0;
+                break;
+                default:
+                printf("Message envoyé par %s : %s (%d octets)\n\n",users[i].login, messageRecu, lus);
+              }
+            }
+          }
+        }
+        pollfds[u].revents = 0;
+      }
+    }
+    // si c'est la socket socketEcoute => accept() + création d'une nouvelle entrée dans la table users[]
+
+    // sinon c'est une socket client => read() et gestion des erreurs pour le cas de la déconnexion
+  } else {
+    printf("poll() returned %d\n", nevents);
+  }
 }
+
+// On ferme la ressource avant de quitter
+close(socketEcoute);
+
+return 0;
+}
+
+
+void initName(user users[MAX_USERS], int i){
+  char login_tampon[LENGHT_LOGIN];
+  int login_test=1;
+
+  for(int k=1; k <= MAX_USERS; k++){
+    sprintf(login_tampon, "Anonyme_%d", k);
+    for(int j=0; j < MAX_USERS; j++){
+
+      if(strcmp(login_tampon,users[j].login) == 0 ){
+        login_test++;
+        break;
+      }
+
+    }
+    if(login_test==1){
+      printf("login = %s\n", login_tampon);
+      strcpy(users[i].login,login_tampon);
+      break;
+    }
+    login_test=1;
+  }
+}
+
+
+void detectCommande(char messageRecu[LG_MESSAGE]){
+
+    int j;
+    j = strcspn(messageRecu,"!");
+    int mode = 0;
+    //test nom commande
+    if(j==0){
+    char *rest = NULL;
+    char *mot;
+    int cpt=0;
+    char messageCopy[LG_MESSAGE]; /* le message de la couche Application ! */
+    char contenu[LG_MESSAGE] = ""; /* le message de la couche Application ! */
+
+    strcpy(messageCopy,messageRecu);
+    for (mot = strtok_r(messageCopy, " ", &rest);
+    mot != NULL;
+    mot = strtok_r(NULL, " ", &rest)) {
+      if(cpt==0){
+        printf("commande : %s\n", mot);
+
+        if(strcmp(mot, "!message") == 0){
+          mode = 1;
+        }
+        else {
+          printf("Commande non reconnue\n");
+        }
+
+      }
+      else if(cpt==1){
+        if(mode==1){
+          printf("destinataire : %s\n", mot);
+        }
+      }
+      else if(cpt==2){
+        if(mode==1){
+          strcat(contenu, mot);
+        }
+      }
+      else {
+        if(mode==1){
+          strcat(strcat(contenu, " "), mot);
+        }
+      }
+
+      cpt++;
+
+    }
+    if(mode==1){
+      printf("message : |%s|", contenu);
+
+      printf("\n Fin du message \n\n");
+    }
+    cpt=0;
+
+  }
+
+  j=-2;
+}
+
 

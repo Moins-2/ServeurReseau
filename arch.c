@@ -1,6 +1,6 @@
 
 
-//TODO  : La commande exit et resoudre le problème d'une commande en un mot
+//TODO 1: La commande exit et resoudre le problème d'une commande en un mot
 //TODO 2: Résoudre le problème du dernier message quand quelqu'un se connecte
 //TODO 3: Faire la fonction !login et afficher le login dans le message !hello
 //TODO 4: Faire les options
@@ -120,7 +120,6 @@ int main()
         nfds++;
       }
     }
-    printf("avant le nevent\n");
     nevents = poll(pollfds, nfds, -1);
     if (nevents > 0) {
       // parcours de pollfds[] à la recherche des revents != 0
@@ -141,8 +140,9 @@ int main()
                 /*fonction bienvue
                 verion et !hello
                 */
-                hello(users[i].socketClient);
                 version(users[i].socketClient);
+
+                hello(users[i].socketClient);
 
 
 
@@ -279,6 +279,7 @@ void detectCommande(char messageRecu[LG_MESSAGE], user *emetteur, user users[MAX
           version(emetteur->socketClient);
         }
         else if(strcmp(mot, "!help") == 0 || strcmp(messageRecu, "!help\n") == 0){
+          printf("HELLLLLLLLLLLLLP\n");
           help(emetteur->socketClient);
         }
         else if(strcmp(mot, "!list")== 0 || strcmp(messageRecu, "!list\n") == 0) {
@@ -381,7 +382,7 @@ void version(int socket){
 }
 
 void hello(int socket){
-  char message[LG_MESSAGE]="\t----------------------------------------\n\t| Salut, bienvenu(e) sur notre serveur |\n\t----------------------------------------\n\nPour prendre connaissances des possibilitées que vous avez, utilisez la commande : !help\n\n\n";
+  char message[LG_MESSAGE]="!hello \n\t----------------------------------------\n\t| Salut, bienvenu(e) sur notre serveur |\n\t----------------------------------------\n\nPour prendre connaissances des possibilitées que vous avez, utilisez la commande : !help\n\n\n";
 
   write(socket, message, strlen(message));  //TO DO : les erreurs, voir serveur TCP
 }
@@ -397,7 +398,7 @@ void list(int socket, user users[MAX_USERS]){
   int i=0;
   printf("users[i].login = %s\n",users[i].login);
   if(strcmp(users[i].login, "") != 0){
-    strcat(strcat(message,"&"), users[i].login);
+    strcat(message, users[i].login);
   }
   i++;
   for(i; i<MAX_USERS; i++){
@@ -415,3 +416,23 @@ void list(int socket, user users[MAX_USERS]){
   write(socket, message, strlen(message));  //TO DO : les erreurs, voir serveur TCP
 
 }
+
+/*
+void login(int socket, char login[LENGHT_LOGIN], users user[MAX_USERS]){
+
+    for(int j=0; j < MAX_USERS; j++){
+
+      if(strcmp(login,users[j].login) == 0 ){
+        login_test++;
+        break;
+      }
+
+    }
+    if(login_test==1){
+      printf("login = %s\n", login_tampon);
+      strcpy(users[i].login,login_tampon);
+      break;
+    }
+    login_test=1;
+  }
+}*/

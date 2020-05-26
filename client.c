@@ -17,12 +17,13 @@
 
 
 void menu();
-
+void reception(char messageRecu[LG_MESSAGE]);
 int sendMessage(int descripteurSocket);
 int list(int descripteurSocket);
 int deconnection(int descripteurSocket);
-
+void getMessage(char messageRecu[LG_MESSAGE]);
 void detectCommande(char message[LG_MESSAGE], int socket);
+void getList(char messageRecu[LG_MESSAGE]);
 
 
 int main()
@@ -104,9 +105,9 @@ int main()
 
         lus = read(0, commandeClient, LG_MESSAGE*sizeof(char)); /* attend un message
         de TAILLE fixe */
-        printf("lus = %d\n", lus);
+      //  printf("lus = %d\n", lus);
         commandeClient[strlen(commandeClient)-1]='\0';
-        printf("Voici le message : %s\n", commandeClient);
+    //    printf("Voici le message : %s\n", commandeClient);
         switch(lus)
         {
           case -1 : /* une erreur ! */
@@ -117,8 +118,8 @@ int main()
           fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
           close(descripteurSocket);
           return 0;
-          default: /* réception de n octets */
-          printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);
+        /*  default:
+      //    printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);*/
         }
 
 
@@ -142,7 +143,9 @@ int main()
           close(descripteurSocket);
           return 0;
           default: /* réception de n octets */
-          printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);
+          reception(messageRecu);
+        //  printf("Message reçu |%s| envoyé avec succès (%d octets)\n\n", messageRecu, lus);
+
         }
         //--- Fin de l’étape n°4 !
         // On ferme la ressource avant de quitter
@@ -188,8 +191,8 @@ int sendMessage(int descripteurSocket){
 
   strcat(message, " ");
   strcat(message, contenu);
-  printf("message = %s\n", message);
-  printf("strlen(message) = %ld \n", strlen(message));
+/*  printf("message = %s\n", message);
+  printf("strlen(message) = %ld \n", strlen(message));*/
 
   ecrits = write(descripteurSocket, message, strlen(message)); // message à TAILLE variable
   switch(ecrits)
@@ -202,22 +205,22 @@ int sendMessage(int descripteurSocket){
     fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
     close(descripteurSocket);
     return 0;
-    default:
-    printf("Message |%s| envoyé avec succès (%d octets)\n\n", message, ecrits);
+    /*  default:
+  //    printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);*/
   }
 }
 
 
 void detectCommande(char message[LG_MESSAGE], int socket){
 
-printf("commande : |%s|\n",message );
+//printf("commande : |%s|\n",message );
   if(strcmp(message, "message") == 0 || strcmp(message, "3") == 0){
     sendMessage(socket)   ;
   }
   else if(strcmp(message, "list") == 0 || strcmp(message, "2") == 0){
     list(socket)   ;
   }
-  else if(strcmp(message, "deconnection") == 0 || strcmp(message, "4") == 0){
+  else if(strcmp(message, "exit") == 0 || strcmp(message, "4") == 0){
     deconnection(socket)   ;
   }
   else if(strcmp(message, "login") == 0 || strcmp(message, "1") == 0){
@@ -230,7 +233,7 @@ printf("commande : |%s|\n",message );
 
 int list(int descripteurSocket){
   int ecrits;
-  ecrits = write(descripteurSocket, "!list", strlen("!list")); // message à TAILLE variable
+  ecrits = write(descripteurSocket, "!list ", strlen("!list ")); // message à TAILLE variable
   switch(ecrits)
   {
     case -1 :
@@ -241,10 +244,15 @@ int list(int descripteurSocket){
     fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
     close(descripteurSocket);
     return 0;
-    default:
-    printf("Message |%s| envoyé avec succès (%d octets)\n\n", "!list", ecrits);
+    /*  default:
+  //    printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);*/
   }
 }
+
+
+
+
+
 
 int deconnection(int descripteurSocket){
   int ecrits;
@@ -259,15 +267,15 @@ int deconnection(int descripteurSocket){
     fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
     close(descripteurSocket);
     return 0;
-    default:
-    printf("Message |%s| envoyé avec succès (%d octets)\n\n", "!exit ", ecrits);
+    /*  default:
+  //    printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);*/
   }
 }
 
 int login(int descripteurSocket){
   char login[LENGHT_LOGIN];
   char message[LG_MESSAGE];
-int ecrits;
+  int ecrits;
   memset(login, 0, LENGHT_LOGIN);
   memset(message, 0,LG_MESSAGE);
   printf("Quel nom voulez vous (le caractère & est interdit): ");
@@ -287,7 +295,90 @@ int ecrits;
     fprintf(stderr, "La socket a été fermée par le serveur !\n\n");
     close(descripteurSocket);
     return 0;
-    default:
-    printf("Message |%s| envoyé avec succès (%d octets)\n\n", message, ecrits);
+    /*  default:
+  //    printf("Message reçu du serveur : %s (%d octets)\n\n", messageRecu, lus);*/
+}
+}
+
+void reception(char messageRecu[LG_MESSAGE]){
+  if(strncmp(messageRecu,"!msg",4)==0){
+    getMessage(messageRecu);
+  }
+  else if(strncmp(messageRecu,"!list",4)==0){
+    getList(messageRecu);
+  }
+
+}
+
+void getMessage(char messageRecu[LG_MESSAGE]){
+  //printf("CA MARCHE !!!!!\n");
+  char *rest = NULL;
+  char *mot;
+  int cpt=0;
+  char contenu[LG_MESSAGE];
+  memset(contenu, 0, LG_MESSAGE);
+  for (mot = strtok_r(messageRecu, " ", &rest);
+  mot != NULL;
+  mot = strtok_r(NULL, " ", &rest)) {
+
+    switch(cpt){
+      case 0:
+      break;
+      case 1:{
+        printf("Vous avez reçu un message de %s ", mot);
+        break;
+      }
+
+      case 2:
+      {
+        if(strcmp(mot, "|") == 0){
+          printf("(messgae personnel) : ");
+        }
+        else if(strcmp(mot, "&") == 0){
+          printf("(messgae global) : ");
+        }
+        break;
+      }
+      default:
+        strcat(strcat(contenu, " "), mot);
+        break;
+    }
+
+    cpt++;
+
+  }
+  printf("%s\n",contenu );
+}
+
+void getList(char messageRecu[LG_MESSAGE]){
+  //printf("CA MARCHE !!!!!\n");
+  char *rest = NULL,*rest2 = NULL;
+  char *mot, *mot2;
+  int cpt=0;
+  char contenu[LG_MESSAGE];
+  memset(contenu, 0, LG_MESSAGE);
+  for (mot = strtok_r(messageRecu, " ", &rest);
+  mot != NULL;
+  mot = strtok_r(NULL, " ", &rest)) {
+
+    switch(cpt){
+      case 0:
+      printf("Voici les utilisateurs connecte(e)s :\n");
+
+      break;
+      case 1:{
+        for (mot2 = strtok_r(mot, "&", &rest2);
+        mot2 != NULL;
+        mot2 = strtok_r(NULL, "&", &rest2)) {
+          printf("\t - %s\n",mot2);
+        }
+        break;
+      }
+
+
+    }
+
+    cpt++;
+
   }
 }

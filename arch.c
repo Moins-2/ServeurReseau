@@ -35,12 +35,14 @@ typedef struct User {
 }user;
 
 void initName(user users[MAX_USERS], int i);
-void detectCommande(char messageRecu[LG_MESSAGE],  user *emetteur, user users[MAX_USERS]);
+void detectCommande(char messageRecu[LG_MESSAGE],  user *emetteur, user users[MAX_USERS], struct pollfd pollfds[MAX_USERS+1]);
 void sendMessage(char destinataire[LENGHT_LOGIN], user *emetteur, char message[LG_MESSAGE], user users[MAX_USERS]);
 void version(int socket);
 void hello(int socket);
 void help(int socket);
 void list(int socket, user users[MAX_USERS]);
+void login(char messageRecu[LG_MESSAGE],int socket,user users[MAX_USERS]);
+void end(user users[MAX_USERS], int socket,struct pollfd pollfds[MAX_USERS+1]);
 
 
 
@@ -159,14 +161,12 @@ int main()
             }
           }
           else {
-            printf("else\n");
             for(int i = 0; i < MAX_USERS; i++) {
               if(pollfds[u].fd == users[i].socketClient) {
                 lus = read(users[i].socketClient, messageRecu, LG_MESSAGE*sizeof(char));
 
                 //fct detectCommande
-
-                detectCommande(messageRecu, &users[i], users);
+                detectCommande(messageRecu, &users[i], users, pollfds);
 
                 //Fin de la foncion
 
@@ -223,7 +223,6 @@ void initName(user users[MAX_USERS], int i){
 
     }
     if(login_test==1){
-      printf("login = %s\n", login_tampon);
       strcpy(users[i].login,login_tampon);
       break;
     }
@@ -232,8 +231,8 @@ void initName(user users[MAX_USERS], int i){
 }
 
 
-void detectCommande(char messageRecu[LG_MESSAGE], user *emetteur, user users[MAX_USERS]){
-
+void detectCommande(char messageRecu[LG_MESSAGE],  user *emetteur, user users[MAX_USERS], struct pollfd pollfds[MAX_USERS+1]){ 
+	
   int j;
   j = strcspn(messageRecu,"!");
   int mode = 0;
@@ -264,60 +263,70 @@ void detectCommande(char messageRecu[LG_MESSAGE], user *emetteur, user users[MAX
 
 
     strcpy(messageCopy,messageRecu);
-    for (mot = strtok_r(messageCopy, " ", &rest);
-    mot != NULL;
-    mot = strtok_r(NULL, " ", &rest)) {
-
-      switch(cpt){
-        case 0:
-        printf("commande : %s\n", mot);
-        printf("messsage reçu  = |%s|\n",messageRecu);
-        if(strcmp(mot, "!msg") == 0){
-          mode = 1;
-        }
-        else if(strcmp(mot, "!version") == 0 || strcmp(messageRecu, "!version\n") == 0){
+    if(strcmp(messageRecu, "!version") == 0 || strcmp(messageRecu, "!version\n") == 0){
           version(emetteur->socketClient);
         }
-        else if(strcmp(mot, "!help") == 0 || strcmp(messageRecu, "!help\n") == 0){
-          printf("HELLLLLLLLLLLLLP\n");
+    else if(strcmp(messageRecu, "!help") == 0 || strcmp(messageRecu, "!help\n") == 0){
           help(emetteur->socketClient);
         }
-        else if(strcmp(mot, "!list")== 0 || strcmp(messageRecu, "!list\n") == 0) {
+    else if(strcmp(messageRecu, "!list")== 0 || strcmp(messageRecu, "!list\n") == 0) {
           list(emetteur->socketClient, users);
         }
-
-        else {
-          printf("Commande non reconnue\n");
+    else if(strcmp(messageRecu, "!exit")== 0 || strcmp(messageRecu, "!exit\n") == 0) {
+          end(users,emetteur->socketClient,pollfds);
         }
-        break;
+    else {
+		for (mot = strtok_r(messageCopy, " ", &rest);
+		mot != NULL;
+		mot = strtok_r(NULL, " ", &rest)) {
 
-        case 1:
-        switch (mode) {
-          case 1:
-          strcat(destinataire, mot);
-          break;
-        }
-        break;
+		  switch(cpt){
+			case 0:
+			printf("commande : %s\n", mot);
+			printf("messsage reçu  = |%s|\n",messageRecu);
+			if(strcmp(mot, "!msg") == 0){
+			  mode = 1;
+			}
+			else if(strcmp(mot, "!login") == 0){
+				mode=2;
+			}
 
-        case 2:
-        switch (mode) {
-          case 1:
+			else {
+			  printf("Commande non reconnue\n");
+			}
+			break;
 
-          strcat(contenu, mot);
-          break;
-        }
-        break;
+			case 1:
+			switch (mode) {
+			  case 1:
+			  strcat(destinataire, mot);
+			  break;
+			  
+			  case 2:
+			  strcat(destinataire, mot);
+			  login(destinataire,emetteur->socketClient,users);
+			}
+			break;
 
-        default:
-        switch (mode) {
-          case 1:
-          strcat(strcat(contenu, " "), mot);
-          break;
-        }
-      }
+			case 2:
+			switch (mode) {
+			  case 1:
 
-      cpt++;
+			  strcat(contenu, mot);
+			  break;
+			}
+			break;
 
+			default:
+			switch (mode) {
+			  case 1:
+			  strcat(strcat(contenu, " "), mot);
+			  break;
+			}
+		  }
+
+			cpt++;
+		}
     }
     if(mode==1){
 
@@ -334,9 +343,7 @@ void detectCommande(char messageRecu[LG_MESSAGE], user *emetteur, user users[MAX
 
 void sendMessage(char destinataire[LENGHT_LOGIN], user *emetteur, char message[LG_MESSAGE], user users[MAX_USERS]){
   /*
-
   Forme du message a envoyer au client(s) concerné(es):  !msg login_from type le_message
-
   Type = | (msg direct) ou & (msg broadcast)
   */
 
@@ -351,7 +358,7 @@ void sendMessage(char destinataire[LENGHT_LOGIN], user *emetteur, char message[L
   }
 
   strcat(envoi, message);
-  printf("\nMessage trasmis à %s : %s\n", destinataire, envoi);
+  printf("\nMessage transmis à %s : %s\n", destinataire, envoi);
 
   ///////////////////////////////// message groupé /////////////////////
   if(strcmp(destinataire, "&") == 0){
@@ -419,14 +426,11 @@ void list(int socket, user users[MAX_USERS]){
 
 /*
 void login(int socket, char login[LENGHT_LOGIN], users user[MAX_USERS]){
-
     for(int j=0; j < MAX_USERS; j++){
-
       if(strcmp(login,users[j].login) == 0 ){
         login_test++;
         break;
       }
-
     }
     if(login_test==1){
       printf("login = %s\n", login_tampon);
@@ -436,3 +440,26 @@ void login(int socket, char login[LENGHT_LOGIN], users user[MAX_USERS]){
     login_test=1;
   }
 }*/
+
+void end(user users[MAX_USERS], int socket,struct pollfd pollfds[MAX_USERS+1]){
+	close(socket);
+	for(int i=0; i<MAX_USERS;i++){
+		if(users[i].socketClient==socket){
+			users[i].socketClient=0;
+			strcpy(users[i].login,"");
+			for(int j=0; j<MAX_USERS+1;j++){
+				if(pollfds[j].fd==socket){
+					pollfds[j].fd=users[i].socketClient;
+				}
+			}	
+		}
+	}
+}
+
+void login(char messageRecu[LG_MESSAGE],int socket,user users[MAX_USERS]){
+	for(int i=0; i<MAX_USERS;i++){
+		if(users[i].socketClient==socket){
+			strcpy(users[i].login,messageRecu);
+		}
+	}
+}

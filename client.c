@@ -24,6 +24,7 @@ int deconnection(int descripteurSocket);
 void getMessage(char messageRecu[LG_MESSAGE]);
 void detectCommande(char message[LG_MESSAGE], int socket);
 void getList(char messageRecu[LG_MESSAGE]);
+int login(int descripteurSocket);
 
 
 int main()
@@ -224,7 +225,7 @@ void detectCommande(char message[LG_MESSAGE], int socket){
     deconnection(socket)   ;
   }
   else if(strcmp(message, "login") == 0 || strcmp(message, "1") == 0){
-    deconnection(socket)   ;
+    login(socket)   ;
   }
   else {
     printf("Commande non reconnue\n");
@@ -281,7 +282,7 @@ int login(int descripteurSocket){
   printf("Quel nom voulez vous (le caractère & est interdit): ");
   fgets(login,sizeof(login), stdin);
   login[(strlen(login) )-1]='\0';
-  sprintf(message, "!msg ");
+  sprintf(message, "!login ");
   strcat(message, login);
 
   ecrits = write(descripteurSocket, message, strlen(message)); // message à TAILLE variable
